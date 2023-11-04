@@ -18,7 +18,7 @@ public:
         }
         else if (err == -1) {
             auto e = errno;
-            MUDUO_STUDY_LOG_ERROR("inet_pton failed, error:{}-{}", strerror(e), e);
+            MUDUO_STUDY_LOG_ERROR("inet_pton failed, code:{}-{}", strerror(e), e);
         }
     }
 
