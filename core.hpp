@@ -7,6 +7,8 @@
 #include <errno.h>
 #include <assert.h>
 #include <iostream>
+#include <chrono>
+#include <sys/epoll.h>
 
 #ifndef MUDUO_STUDY_BEGIN_NAMESPACE
 #define MUDUO_STUDY_BEGIN_NAMESPACE namespace muduo_study {
@@ -45,5 +47,7 @@ template<typename T>
 void ZeroMemory(T* s, size_t count) {
     memset(s, 0, sizeof(T) * count);
 }
+
+using time_point = std::chrono::system_clock::time_point;
 
 MUDUO_STUDY_END_NAMESPACE

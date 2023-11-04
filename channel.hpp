@@ -1,7 +1,7 @@
 #include "core.hpp"
-#include <sys/epoll.h>
 #include <chrono>
 #include <functional>
+#include <sys/epoll.h>
 
 MUDUO_STUDY_BEGIN_NAMESPACE
 
@@ -19,7 +19,7 @@ public:
         kWriteEvent = EPOLLOUT
     };
 
-    Channel(EventLoop* loop, int fd) : 
+    Channel(std::reference_wrapper<EventLoop> loop, int fd) : 
         loop_{loop},
         fd_{fd},
         events_{kNoneEvent},
@@ -45,8 +45,13 @@ public:
     int events() const noexcept { return events_; }
     int revents() const noexcept { return revents_; }
     void set_revents(int revents) noexcept { revents_ = revents; }
+    int index() const noexcept { return index_; }
+    void set_index(int idx) noexcept { index_ = idx; }
+    auto owner_loop() const noexcept { return loop_; }
 
     bool IsNoneEvent() const {return events_ == kNoneEvent; }
+    bool IsWriting() const {return events_ & kWriteEvent; }
+    bool IsReading() const {return events_ & kReadEvent; }
 
     void EnableReading() { events_ |= kReadEvent; Update(); }
     void DisableReading() { events_ &= ~kReadEvent; Update(); }
@@ -54,15 +59,45 @@ public:
     void DisableWriting() { events_ &= ~kWriteEvent; Update(); }
     void DisableAll() { events_ = kNoneEvent; Update(); }
 
-    void Update() {
-        added_to_loop_ = true;
-    }
     void Remove() {
         added_to_loop_ = false;
     }
 
+    void HandleEvent(time_point receive_time) {
+        if (tie_.expired()) {
+            if (tie_.lock()) {
+                HandleEventWithGuard(receive_time);
+            }
+        }
+        else {
+            HandleEventWithGuard(receive_time);
+        }
+        
+    }
+
 private:
-    EventLoop* loop_;
+    void Update() {
+        added_to_loop_ = true;
+    }
+
+    void HandleEventWithGuard(time_point receive_time) {
+        event_handling_ = true;
+        if ((revents_ & EPOLLHUP) && !(revents_ & EPOLLIN)) {
+            if (close_callback_) close_callback_();
+        }
+        if (revents_ & EPOLLERR) {
+            if (error_callback_) close_callback_();
+        }
+        if (revents_ & (EPOLLIN | EPOLLPRI | EPOLLRDHUP)) {
+            if (read_callback_) read_callback_(receive_time);
+        }
+        if (revents_ & EPOLLOUT) {
+            if (write_callback_) write_callback_();
+        }
+        event_handling_ = false;
+    }
+
+    std::reference_wrapper<EventLoop> loop_;
     const int fd_;
     int events_;
     int revents_;

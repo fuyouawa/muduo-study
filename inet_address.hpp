@@ -1,3 +1,4 @@
+#pragma once
 #include "logger.hpp"
 #include <netinet/in.h>
 #include <arpa/inet.h>
@@ -17,7 +18,7 @@ public:
         }
         else if (err == -1) {
             auto e = errno;
-            MUDUO_STUDY_LOG_ERROR("{}-{}", strerror(e), e);
+            MUDUO_STUDY_LOG_ERROR("inet_pton failed, error:{}-{}", strerror(e), e);
         }
     }
 
