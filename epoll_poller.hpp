@@ -6,20 +6,20 @@
 
 MUDUO_STUDY_BEGIN_NAMESPACE
 
-class EPollPoller : public details::Poller
+class EPollPoller : public Poller
 {
 public:
     EPollPoller(EventLoop* loop) :
-        details::Poller{loop},
+        Poller{loop},
         epollfd_{epoll_create1(EPOLL_CLOEXEC)},
         events_{kInitEventListSize} {}
 
     ~EPollPoller() override {
-        close(epollfd_);
+        ::close(epollfd_);
     }
 
     time_point Poll(std::chrono::milliseconds timeout, ChannelList* active_channels) override {
-        auto num_events = epoll_wait(epollfd_, events_.data(), events_.size(), timeout.count());
+        auto num_events = ::epoll_wait(epollfd_, events_.data(), events_.size(), timeout.count());
         auto e = errno;
         if (num_events > 0) {
             MUDUO_STUDY_LOG_DEBUG("{} events happened!", num_events);

@@ -10,12 +10,11 @@ class Channel;
 using ChannelList = std::vector<std::reference_wrapper<Channel>>;
 using ChannelMap = std::unordered_map<int, std::reference_wrapper<Channel>>;
 
-namespace details {
 class Poller
 {
 public:
 
-    static std::unique_ptr<Poller> NewDefaultPoller(EventLoop* loop);
+    static Poller* NewDefaultPoller(EventLoop* loop);
 
     Poller(EventLoop* loop) :
         loop_{loop} {}
@@ -35,6 +34,5 @@ protected:
 private:
     EventLoop* loop_;
 };
-}
 
 MUDUO_STUDY_END_NAMESPACE
