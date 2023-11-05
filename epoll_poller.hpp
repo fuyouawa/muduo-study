@@ -3,12 +3,13 @@
 #include "poller.hpp"
 #include "channel.hpp"
 
+
 MUDUO_STUDY_BEGIN_NAMESPACE
 
 class EPollPoller : public details::Poller
 {
 public:
-    EPollPoller(std::reference_wrapper<EventLoop> loop) :
+    EPollPoller(EventLoop* loop) :
         details::Poller{loop},
         epollfd_{epoll_create1(EPOLL_CLOEXEC)},
         events_{kInitEventListSize} {}
@@ -17,17 +18,69 @@ public:
         close(epollfd_);
     }
 
-    time_point Poll(std::chrono::milliseconds timeout, ChannelList& active_channels) override {
-
+    time_point Poll(std::chrono::milliseconds timeout, ChannelList* active_channels) override {
+        auto num_events = epoll_wait(epollfd_, events_.data(), events_.size(), timeout.count());
+        auto e = errno;
+        if (num_events > 0) {
+            MUDUO_STUDY_LOG_DEBUG("{} events happened!", num_events);
+            FillActiveChannels(num_events, active_channels);
+            if (num_events == events_.size()) {
+                events_.resize(events_.size() * 2);
+            }
+        }
+        else if (num_events == 0) {
+            MUDUO_STUDY_LOG_DEBUG("epoll_wait nothing hanppend");
+        }
+        else {
+            if (e != EINTR) {
+                errno = e;
+                MUDUO_STUDY_LOG_SYSERR("epoll_wait faild!");
+            }
+        }
+        return std::chrono::system_clock::now();
     }
-    void UpdateChannel(Channel& channel) override {
 
+    void UpdateChannel(Channel* channel) override {
+        auto st = channel->status();
+        auto fd = channel->fd();
+        if (st == Channel::kNew || st == Channel::kDeleted) {
+            if (st == Channel::kNew) {
+                assert(channels_.find(fd) == channels_.end());
+                channels_[fd] = *channel;
+            }
+            else {
+                assert(channels_.find(fd) != channels_.end());
+                assert(&channels_[fd].get() == channel);
+            }
+            channel->set_status(Channel::kAdded);
+            Update(EPOLL_CTL_ADD, channel);
+        }
+        else {
+            assert(channels_.find(fd) != channels_.end());
+            assert(&channels_[fd].get() == channel);
+            assert(st == Channel::kAdded);
+            if (channel->IsNoneEvent()) {
+                Update(EPOLL_CTL_DEL, channel);
+                channel->set_status(Channel::kDeleted);
+            }
+            else {
+                Update(EPOLL_CTL_MOD, channel);
+            }
+        }
     }
-    void RemoveChannel(Channel& channel) override {
-
-    }
-    void HasChannel(const Channel& channel) override {
-
+    void RemoveChannel(Channel* channel) override {
+        auto fd = channel->fd();
+        assert(channels_.find(fd) != channels_.end());
+        assert(&channels_[fd].get() == channel);
+        assert(channel->IsNoneEvent());
+        auto st = channel->status();
+        assert(st != Channel::kNew);
+        auto n = channels_.erase(fd);
+        assert(n == 1);
+        if (st == Channel::kAdded) {
+            Update(EPOLL_CTL_DEL, channel);
+        }
+        channel->set_status(Channel::kNew);
     }
 
 private:
@@ -48,7 +101,7 @@ private:
         }
     }
 
-    void FillActiveChannels(int num_events, ChannelList& active_channels) const {
+    void FillActiveChannels(int num_events, ChannelList* active_channels) const {
         assert(num_events < events_.size());
         for (size_t i = 0; i < num_events; i++){
             decltype(auto) channel = *static_cast<Channel*>(events_[i].data.ptr);
@@ -57,23 +110,23 @@ private:
             assert(it != channels_.end() && &it->second.get() == &channel);
 #endif
             channel.set_revents(events_[i].events);
-            active_channels.push_back(channel);
+            active_channels->push_back(channel);
         }
     }
 
-    void Update(int op, Channel& channel) {
+    void Update(int op, Channel* channel) {
         epoll_event event;
         ZeroMemory(event);
-        event.events = channel.events();
-        event.data.ptr = &channel;
-        auto fd = channel.fd();
+        event.events = channel->events();
+        event.data.ptr = channel;
+        auto fd = channel->fd();
         if (epoll_ctl(epollfd_, op, fd, &event) == -1) {
             auto e = errno;
             if (op == EPOLL_CTL_DEL) {
-                MUDUO_STUDY_LOG_ERROR("epoll_ctl failed, op is {}, info:{}-{}", OpToStr(op), strerror(e), e);
+                MUDUO_STUDY_LOG_SYSERR("epoll_ctl failed! op is {}", OpToStr(op));
             }
             else {
-                MUDUO_STUDY_LOG_FATAL("epoll_ctl failed, op is {}, info:{}-{}", OpToStr(op), strerror(e), e);
+                MUDUO_STUDY_LOG_SYSERR("epoll_ctl failed! op is {}", OpToStr(op));
             }
         }
         

@@ -1,7 +1,7 @@
+#pragma once
 #include "core.hpp"
 #include <chrono>
 #include <functional>
-#include <sys/epoll.h>
 
 MUDUO_STUDY_BEGIN_NAMESPACE
 
@@ -18,13 +18,18 @@ public:
         kReadEvent = EPOLLIN | EPOLLPRI,
         kWriteEvent = EPOLLOUT
     };
+    enum Status {
+        kNew,
+        kDeleted,
+        kAdded
+    };
 
-    Channel(std::reference_wrapper<EventLoop> loop, int fd) : 
+    Channel(EventLoop* loop, int fd) : 
         loop_{loop},
         fd_{fd},
         events_{kNoneEvent},
         revents_{kNoneEvent},
-        index_{-1},
+        status_{kNew},
         event_handling_{false},
         added_to_loop_{false} {}
 
@@ -45,9 +50,9 @@ public:
     int events() const noexcept { return events_; }
     int revents() const noexcept { return revents_; }
     void set_revents(int revents) noexcept { revents_ = revents; }
-    int index() const noexcept { return index_; }
-    void set_index(int idx) noexcept { index_ = idx; }
-    auto owner_loop() const noexcept { return loop_; }
+    Status status() const noexcept { return status_; }
+    void set_status(Status status) noexcept { status_ = status; }
+    EventLoop* owner_loop() const noexcept { return loop_; }
 
     bool IsNoneEvent() const {return events_ == kNoneEvent; }
     bool IsWriting() const {return events_ & kWriteEvent; }
@@ -97,11 +102,11 @@ private:
         event_handling_ = false;
     }
 
-    std::reference_wrapper<EventLoop> loop_;
+    EventLoop* loop_;
     const int fd_;
     int events_;
     int revents_;
-    int index_;
+    Status status_;
 
     std::weak_ptr<void> tie_;
     bool event_handling_;

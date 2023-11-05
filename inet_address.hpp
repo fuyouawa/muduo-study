@@ -17,8 +17,7 @@ public:
             MUDUO_STUDY_LOG_ERROR("Invalid netword address: {}", ip);
         }
         else if (err == -1) {
-            auto e = errno;
-            MUDUO_STUDY_LOG_ERROR("inet_pton failed, code:{}-{}", strerror(e), e);
+            MUDUO_STUDY_LOG_SYSERR("inet_pton(...) failed!");
         }
     }
 
