@@ -10,6 +10,8 @@
 #include <chrono>
 #include <sys/epoll.h>
 #include <ranges>
+#include <thread>
+#include <sstream>
 
 #ifndef MUDUO_STUDY_BEGIN_NAMESPACE
 #define MUDUO_STUDY_BEGIN_NAMESPACE namespace muduo_study {
@@ -52,3 +54,18 @@ void ZeroMemory(T* s, size_t count) {
 using time_point = std::chrono::system_clock::time_point;
 
 MUDUO_STUDY_END_NAMESPACE
+
+template <>
+struct fmt::formatter<std::thread::id> {
+    template <typename ParseContext>
+    constexpr auto parse(ParseContext& ctx) {
+        return ctx.begin();
+    }
+
+    template <typename FormatContext>
+    auto format(const std::thread::id& tid, FormatContext& ctx) {
+        std::stringstream ss;
+        ss << tid;
+        return format_to(ctx.out(), "{}", ss.str());
+    }
+};

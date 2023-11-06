@@ -5,9 +5,8 @@
 
 MUDUO_STUDY_BEGIN_NAMESPACE
 
-class EventLoop;
-
-class Channel
+template<typename EventLoop/*=EventLoop*/>
+class ChannelImpl
 {
 public:
     using EventCallback = std::function<void()>;
@@ -24,7 +23,7 @@ public:
         kAdded
     };
 
-    Channel(EventLoop* loop, int fd) : 
+    ChannelImpl(EventLoop* loop, int fd) : 
         loop_{loop},
         fd_{fd},
         events_{kNoneEvent},
@@ -33,7 +32,7 @@ public:
         event_handling_{false},
         added_to_loop_{false} {}
 
-    ~Channel() {
+    ~ChannelImpl() {
 
     }
 
@@ -66,6 +65,7 @@ public:
 
     void Remove() {
         added_to_loop_ = false;
+        loop_->UpdateChannel(this);
     }
 
     void HandleEvent(time_point receive_time) {
@@ -83,6 +83,7 @@ public:
 private:
     void Update() {
         added_to_loop_ = true;
+        loop_->RemoveChannel(this);
     }
 
     void HandleEventWithGuard(time_point receive_time) {
@@ -117,4 +118,6 @@ private:
     EventCallback error_callback_;
 };
 
+class EventLoop;
+using Channel = ChannelImpl<EventLoop>;
 MUDUO_STUDY_END_NAMESPACE

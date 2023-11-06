@@ -1,19 +1,17 @@
 #pragma once
 #include "core.hpp"
+#include "channel.hpp"
 #include <vector>
 #include <unordered_map>
 
 MUDUO_STUDY_BEGIN_NAMESPACE
 
-class EventLoop;
-class Channel;
-using ChannelList = std::vector<std::reference_wrapper<Channel>>;
-using ChannelMap = std::unordered_map<int, std::reference_wrapper<Channel>>;
+using ChannelList = std::vector<Channel*>;
+using ChannelMap = std::unordered_map<int, Channel*>;
 
 class Poller
 {
 public:
-
     static Poller* NewDefaultPoller(EventLoop* loop);
 
     Poller(EventLoop* loop) :
@@ -25,7 +23,7 @@ public:
     virtual void RemoveChannel(Channel* channel) = 0;
     virtual bool HasChannel(const Channel& channel) {
         auto it = channels_.find(channel.fd());
-        return it != channels_.end() && &it->second.get() == &channel;
+        return it != channels_.end() && it->second == &channel;
     }
 
 protected:

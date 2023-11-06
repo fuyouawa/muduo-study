@@ -1,11 +1,9 @@
 #pragma once
 #include "core.hpp"
 #include "default_poller.hpp"
-#include "channel.hpp"
 #include "logger.hpp"
 #include <sys/eventfd.h>
 #include <atomic>
-#include <thread>
 #include <mutex>
 
 MUDUO_STUDY_BEGIN_NAMESPACE
@@ -38,7 +36,7 @@ public:
     {
         MUDUO_STUDY_LOG_DEBUG("EventLoop created");
         if (Instance) {
-            MUDUO_STUDY_LOG_FATAL("Another EventLoop {:016x} has existed in this thread({})!", this, thread_id_);
+            MUDUO_STUDY_LOG_FATAL("Another EventLoop {:016x} has existed in this thread({})!", (intptr_t)this, thread_id_);
         }
         else {
             Instance = this;
@@ -58,13 +56,13 @@ public:
         ::close(wakeup_channel_->fd());
     }
 
-    void Loop();
-    void Quit();
-    time_point poll_return_time();
-    void run_in_loop(Functor& cb);
-    void queue_in_loop(Functor& cb);
-    size_t queue_size() const;
-    void Wakeup();
+    // void Loop();
+    // void Quit();
+    // time_point poll_return_time();
+    // void run_in_loop(Functor& cb);
+    // void queue_in_loop(Functor& cb);
+    // size_t queue_size() const;
+    // void Wakeup();
     bool IsInLoopThread() const { return thread_id_ == std::this_thread::get_id(); }
 
     void UpdateChannel(Channel* channel) {
@@ -75,7 +73,7 @@ public:
         assert(channel->owner_loop() == this);
         if (event_handling_.load()) {
             assert(cur_active_channel_ == channel ||
-                std::ranges::find_if(active_channels_, [=](auto ch){ return &ch.get() == channel;}) == active_channels_.end());
+                std::ranges::find(active_channels_, channel) == active_channels_.end());
         }
         poller_->RemoveChannel(channel);
     }

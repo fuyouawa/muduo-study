@@ -46,18 +46,18 @@ public:
         if (st == Channel::kNew || st == Channel::kDeleted) {
             if (st == Channel::kNew) {
                 assert(channels_.find(fd) == channels_.end());
-                channels_[fd] = *channel;
+                channels_[fd] = channel;
             }
             else {
                 assert(channels_.find(fd) != channels_.end());
-                assert(&channels_[fd].get() == channel);
+                assert(channels_[fd] == channel);
             }
             channel->set_status(Channel::kAdded);
             Update(EPOLL_CTL_ADD, channel);
         }
         else {
             assert(channels_.find(fd) != channels_.end());
-            assert(&channels_[fd].get() == channel);
+            assert(channels_[fd] == channel);
             assert(st == Channel::kAdded);
             if (channel->IsNoneEvent()) {
                 Update(EPOLL_CTL_DEL, channel);
@@ -71,7 +71,7 @@ public:
     void RemoveChannel(Channel* channel) override {
         auto fd = channel->fd();
         assert(channels_.find(fd) != channels_.end());
-        assert(&channels_[fd].get() == channel);
+        assert(channels_[fd] == channel);
         assert(channel->IsNoneEvent());
         auto st = channel->status();
         assert(st != Channel::kNew);
@@ -104,12 +104,12 @@ private:
     void FillActiveChannels(int num_events, ChannelList* active_channels) const {
         assert(num_events < events_.size());
         for (size_t i = 0; i < num_events; i++){
-            decltype(auto) channel = *static_cast<Channel*>(events_[i].data.ptr);
+            auto channel = static_cast<Channel*>(events_[i].data.ptr);
 #ifndef NDEBUG
-            auto it = channels_.find(channel.fd());
-            assert(it != channels_.end() && &it->second.get() == &channel);
+            auto it = channels_.find(channel->fd());
+            assert(it != channels_.end() && it->second == channel);
 #endif
-            channel.set_revents(events_[i].events);
+            channel->set_revents(events_[i].events);
             active_channels->push_back(channel);
         }
     }
