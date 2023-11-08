@@ -10,8 +10,13 @@ class EventLoopThreadPool
 public:
     using ThreadInitCallBack = std::function<void(EventLoop*)>;
 
-    EventLoopThreadPool(EventLoop* basic_loop);
-    ~EventLoopThreadPool();
+    EventLoopThreadPool(EventLoop* basic_loop) :
+        basic_loop_{basic_loop},
+        started_(false),
+        num_threads_{0},
+        next_{0}
+        {}
+    ~EventLoopThreadPool() = default;
 
     void set_thread_num(size_t num) {
         num_threads_ = num;
