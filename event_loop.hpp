@@ -22,6 +22,7 @@ public:
     MUDUO_STUDY_NONCOPYABLE(EventLoop)
     using Functor = std::function<void()>;
     thread_local static inline EventLoop* Instance = nullptr;
+    static constexpr auto kPoolTimeoutMs = 10000ms;
 
     EventLoop() :
         looping_{false},
@@ -56,33 +57,108 @@ public:
         ::close(wakeup_channel_->fd());
     }
 
-    // void Loop();
-    // void Quit();
-    // time_point poll_return_time();
-    // void run_in_loop(Functor& cb);
-    // void queue_in_loop(Functor& cb);
-    // size_t queue_size() const;
-    // void Wakeup();
+    time_point poll_return_time() const noexcept {
+        return poll_return_time_;
+    }
+
+    void Loop() {
+        assert(!looping_);
+        AssertInLoopThread();
+        looping_ = true;
+        quit_ = false;
+        MUDUO_STUDY_LOG_DEBUG("EventLoop({:016x}) Starting!", (intptr_t)this);
+        while (!quit_) {
+            active_channels_.clear();
+            poll_return_time_ = poller_->Poll(kPoolTimeoutMs, &active_channels_);
+            ++iteration_;
+            event_handling_ = true;
+            for (auto channel : active_channels_) {
+                cur_active_channel_ = channel;
+                cur_active_channel_->HandleEvent(poll_return_time_);
+            }
+            cur_active_channel_ = nullptr;
+            event_handling_ = false;
+            DoPendingFunctors();
+        }
+        MUDUO_STUDY_LOG_DEBUG("EventLoop({:016x}) Stop!", (intptr_t)this);
+    }
+    void Quit() {
+        quit_ = true;
+        if (!IsInLoopThread()) {
+            Wakeup();
+        }
+    }
+    void RunInLoop(Functor& cb) {
+        if (IsInLoopThread()) {
+            cb();
+        }
+        else {
+            QueueInLoop(cb);
+        }
+    }
+    void QueueInLoop(Functor& cb) {
+        {
+            std::scoped_lock lock{mutex_};
+            pending_functors_.push_back(std::move(cb));
+        }
+        if (!IsInLoopThread() || calling_pending_functors_) {
+            Wakeup();
+        }
+    }
+    size_t queue_size() const noexcept {
+        std::scoped_lock lock{mutex_};
+        return pending_functors_.size();
+    }
+    void Wakeup() {
+        uint64_t one = 1;
+        auto n = ::write(wakeup_channel_->fd(), &one, sizeof(one));
+        if (n != sizeof(one)) {
+            MUDUO_STUDY_LOG_ERROR("write() {} bytes instead of 8!", n);
+        }
+    }
     bool IsInLoopThread() const { return thread_id_ == std::this_thread::get_id(); }
 
     void UpdateChannel(Channel* channel) {
         assert(channel->owner_loop() == this);
+        AssertInLoopThread();
         poller_->UpdateChannel(channel);
     }
     void RemoveChannel(Channel* channel) {
         assert(channel->owner_loop() == this);
+        AssertInLoopThread();
         if (event_handling_.load()) {
             assert(cur_active_channel_ == channel ||
                 std::ranges::find(active_channels_, channel) == active_channels_.end());
         }
         poller_->RemoveChannel(channel);
     }
-    bool HasChannel(const Channel& channel) {
-        assert(channel.owner_loop() == this);
+    bool HasChannel(Channel* channel) {
+        assert(channel->owner_loop() == this);
+        AssertInLoopThread();
         return poller_->HasChannel(channel);
     }
 
+    void AssertInLoopThread() {
+        if (!IsInLoopThread()) {
+            MUDUO_STUDY_LOG_FATAL("EventLoop({:016x}) was created in thread-id:{}, but current thread-id is {}",
+                (intptr_t)this, thread_id_, std::this_thread::get_id());
+        }
+    }
+
 private:
+    void DoPendingFunctors() {
+        std::vector<Functor> functors;
+        calling_pending_functors_ = true;
+        {
+            std::scoped_lock lock{mutex_};
+            functors.swap(functors);
+        }
+        for (auto functor : functors) {
+            functor();
+        }
+        calling_pending_functors_ = false;
+    }
+
     std::atomic_bool looping_;
     std::atomic_bool quit_;
     std::atomic_bool event_handling_;

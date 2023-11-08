@@ -21,9 +21,9 @@ public:
     virtual time_point Poll(std::chrono::milliseconds timeout, ChannelList* active_channels) = 0;
     virtual void UpdateChannel(Channel* channel) = 0;
     virtual void RemoveChannel(Channel* channel) = 0;
-    virtual bool HasChannel(const Channel& channel) {
-        auto it = channels_.find(channel.fd());
-        return it != channels_.end() && it->second == &channel;
+    virtual bool HasChannel(Channel* channel) {
+        auto it = channels_.find(channel->fd());
+        return it != channels_.end() && it->second == channel;
     }
 
 protected:

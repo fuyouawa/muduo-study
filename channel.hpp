@@ -65,7 +65,7 @@ public:
 
     void Remove() {
         added_to_loop_ = false;
-        loop_->UpdateChannel(this);
+        loop_->RemoveChannel(this);
     }
 
     void HandleEvent(time_point receive_time) {
@@ -83,7 +83,7 @@ public:
 private:
     void Update() {
         added_to_loop_ = true;
-        loop_->RemoveChannel(this);
+        loop_->UpdateChannel(this);
     }
 
     void HandleEventWithGuard(time_point receive_time) {
