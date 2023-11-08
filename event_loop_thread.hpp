@@ -4,12 +4,13 @@
 
 MUDUO_STUDY_BEGIN_NAMESPACE
 
+
 template<class EventLoop>
 class EventLoopThreadImpl
 {
 public:
     using ThreadInitCallBack = std::function<void(EventLoop*)>;
-
+    
     EventLoopThreadImpl(ThreadInitCallBack&& cb = ThreadInitCallBack()) :
         init_callback_{std::move(cb)},
         loop_{nullptr},
