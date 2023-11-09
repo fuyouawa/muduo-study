@@ -121,7 +121,6 @@ private:
         event.data.ptr = channel;
         auto fd = channel->fd();
         if (epoll_ctl(epollfd_, op, fd, &event) == -1) {
-            auto e = errno;
             if (op == EPOLL_CTL_DEL) {
                 MUDUO_STUDY_LOG_SYSERR("epoll_ctl failed! op is {}", OpToStr(op));
             }

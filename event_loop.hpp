@@ -42,13 +42,7 @@ public:
         else {
             Instance = this;
         }
-        wakeup_channel_->set_read_callback([this](auto receive_time){
-            uint64_t one = 1;
-            auto n = ::read(wakeup_channel_->fd(), &one, sizeof(one));
-            if (n != sizeof(one)) {
-                MUDUO_STUDY_LOG_ERROR("handle read: {} bytes instead of 8!", n);
-            }
-        });
+        wakeup_channel_->set_read_callback([this](auto receive_time){ this->HandleRead(); });
         wakeup_channel_->EnableReading();
     }
     ~EventLoop() {
@@ -157,6 +151,14 @@ private:
             functor();
         }
         calling_pending_functors_ = false;
+    }
+
+    void HandleRead() {
+        uint64_t one = 1;
+        auto n = ::read(wakeup_channel_->fd(), &one, sizeof(one));
+        if (n != sizeof(one)) {
+            MUDUO_STUDY_LOG_ERROR("read: {} bytes instead of 8!", n);
+        }
     }
 
     std::atomic_bool looping_;

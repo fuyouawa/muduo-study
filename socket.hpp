@@ -56,9 +56,13 @@ public:
     }
     int Accept(InetAddress* peeraddr) {
         socklen_t addrlen = sizeof(sockaddr_in);
-        auto connfd = ::accept4(sockfd_, (sockaddr*)peeraddr->sockaddr(), &addrlen, SOCK_NONBLOCK | SOCK_CLOEXEC);
+        sockaddr_in addr;
+        auto connfd = ::accept4(sockfd_, (sockaddr*)&addr, &addrlen, SOCK_NONBLOCK | SOCK_CLOEXEC);
         if (connfd == -1) {
             MUDUO_STUDY_LOG_SYSFATAL("accept4() failed!");
+        }
+        else {
+            peeraddr->set_sockaddr(addr);
         }
         return connfd;
     }
