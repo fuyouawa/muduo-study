@@ -172,7 +172,7 @@ private:
     Channel* cur_active_channel_;
     std::unique_ptr<Channel> wakeup_channel_;
 
-    std::mutex mutex_;
+    mutable std::mutex mutex_;
     std::atomic_bool calling_pending_functors_;
     std::vector<Functor> pending_functors_;
 };

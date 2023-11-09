@@ -30,8 +30,8 @@ public:
         return fmt::format("{}:{}", ip(), ntohs(addr_.sin_port));
     }
 
-    const sockaddr_in& sockaddr() const noexcept {
-        return addr_;
+    const sockaddr_in* sockaddr() const noexcept {
+        return &addr_;
     }
 
 private:

@@ -84,5 +84,6 @@ do { \
 #define MUDUO_STUDY_LOG_WARNING(...) _MUDUO_STUDY_LOG(muduo_study::Logger::kWarning, 0, __VA_ARGS__)
 #define MUDUO_STUDY_LOG_ERROR(...) _MUDUO_STUDY_LOG(muduo_study::Logger::kError, 0, __VA_ARGS__)
 #define MUDUO_STUDY_LOG_FATAL(...) _MUDUO_STUDY_LOG(muduo_study::Logger::kFatal, 0, __VA_ARGS__)
-#define MUDUO_STUDY_LOG_SYSERR(...) _MUDUO_STUDY_LOG(muduo_study::Logger::kFatal, errno, __VA_ARGS__)
+#define MUDUO_STUDY_LOG_SYSERR(...) _MUDUO_STUDY_LOG(muduo_study::Logger::kError, errno, __VA_ARGS__)
+#define MUDUO_STUDY_LOG_SYSFATAL(...) _MUDUO_STUDY_LOG(muduo_study::Logger::kFatal, errno, __VA_ARGS__)
 #endif
