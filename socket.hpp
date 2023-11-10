@@ -1,3 +1,4 @@
+#pragma once
 #include "core.hpp"
 #include "inet_address.hpp"
 #include <netinet/tcp.h>

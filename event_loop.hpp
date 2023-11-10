@@ -42,7 +42,7 @@ public:
         else {
             Instance = this;
         }
-        wakeup_channel_->set_read_callback([this](auto receive_time){ this->HandleRead(); });
+        wakeup_channel_->set_read_callback([this](auto){ this->HandleRead(); });
         wakeup_channel_->EnableReading();
     }
     ~EventLoop() {
