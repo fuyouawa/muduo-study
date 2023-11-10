@@ -19,7 +19,7 @@ public:
     }
 
     time_point Poll(std::chrono::milliseconds timeout, ChannelList* active_channels) override {
-        auto num_events = ::epoll_wait(epollfd_, events_.data(), events_.size(), timeout.count());
+        size_t num_events = ::epoll_wait(epollfd_, events_.data(), events_.size(), timeout.count());
         auto e = errno;
         if (num_events > 0) {
             MUDUO_STUDY_LOG_DEBUG("{} events happened!", num_events);
@@ -101,7 +101,7 @@ private:
         }
     }
 
-    void FillActiveChannels(int num_events, ChannelList* active_channels) const {
+    void FillActiveChannels(size_t num_events, ChannelList* active_channels) const {
         assert(num_events < events_.size());
         for (size_t i = 0; i < num_events; i++){
             auto channel = static_cast<Channel*>(events_[i].data.ptr);

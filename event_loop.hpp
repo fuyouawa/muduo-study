@@ -164,6 +164,7 @@ private:
     std::atomic_bool looping_;
     std::atomic_bool quit_;
     std::atomic_bool event_handling_;
+    std::atomic_bool calling_pending_functors_;
 
     int64_t iteration_;
     std::jthread::id thread_id_;
@@ -175,7 +176,6 @@ private:
     std::unique_ptr<Channel> wakeup_channel_;
 
     mutable std::mutex mutex_;
-    std::atomic_bool calling_pending_functors_;
     std::vector<Functor> pending_functors_;
 };
 

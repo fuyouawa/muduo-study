@@ -1,17 +1,16 @@
 #pragma once
 #include "core.hpp"
+#include "event_loop.hpp"
 #include <condition_variable>
 
 MUDUO_STUDY_BEGIN_NAMESPACE
 
+using ThreadInitCallBack = std::function<void(EventLoop*)>;
 
-template<class EventLoop>
-class EventLoopThreadImpl
+class EventLoopThread
 {
 public:
-    using ThreadInitCallBack = std::function<void(EventLoop*)>;
-    
-    EventLoopThreadImpl(ThreadInitCallBack&& cb = ThreadInitCallBack()) :
+    EventLoopThread(ThreadInitCallBack&& cb = ThreadInitCallBack()) :
         init_callback_{std::move(cb)},
         loop_{nullptr},
         thread_{},
@@ -19,7 +18,7 @@ public:
         cv_{},
         exiting_{false}
         {}
-    ~EventLoopThreadImpl() {
+    ~EventLoopThread() {
         exiting_ = true;
         if (loop_) {
             loop_->Quit();
@@ -59,8 +58,5 @@ private:
     std::condition_variable cv_;
     ThreadInitCallBack init_callback_;
 };
-
-class EventLoop;
-using EventLoopThread = EventLoopThreadImpl<EventLoop>;
 
 MUDUO_STUDY_END_NAMESPACE

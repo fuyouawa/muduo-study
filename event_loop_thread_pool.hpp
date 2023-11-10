@@ -1,15 +1,12 @@
 #pragma once
 #include "core.hpp"
 #include "event_loop_thread.hpp"
-#include "event_loop.hpp"
 
 MUDUO_STUDY_BEGIN_NAMESPACE
 
 class EventLoopThreadPool
 {
 public:
-    using ThreadInitCallBack = std::function<void(EventLoop*)>;
-
     EventLoopThreadPool(EventLoop* basic_loop) :
         basic_loop_{basic_loop},
         started_(false),
