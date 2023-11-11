@@ -9,7 +9,7 @@ class EventLoopThreadPool
 public:
     MUDUO_STUDY_NONCOPYABLE(EventLoopThreadPool)
 
-    EventLoopThreadPool(EventLoop* basic_loop) :
+    explicit EventLoopThreadPool(EventLoop* basic_loop) :
         basic_loop_{basic_loop},
         started_(false),
         num_threads_{0},
@@ -41,7 +41,7 @@ public:
         basic_loop_->AssertInLoopThread();
         started_ = true;
         for (size_t i = 0; i < num_threads_; i++) {
-            threads_.push_back(std::move(cb));
+            threads_.push_back(std::make_unique<EventLoopThread>(std::move(cb)));
         }
         if (num_threads_ == 0 && cb) {
             cb(basic_loop_);
@@ -52,7 +52,7 @@ private:
     EventLoop* basic_loop_;
     size_t num_threads_;
     size_t next_;
-    std::vector<EventLoopThread> threads_;
+    std::vector<std::unique_ptr<EventLoopThread>> threads_;
     std::vector<EventLoop*> loops_;
     bool started_;
 };
