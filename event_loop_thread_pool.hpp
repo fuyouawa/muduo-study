@@ -7,6 +7,8 @@ MUDUO_STUDY_BEGIN_NAMESPACE
 class EventLoopThreadPool
 {
 public:
+    MUDUO_STUDY_NONCOPYABLE(EventLoopThreadPool)
+
     EventLoopThreadPool(EventLoop* basic_loop) :
         basic_loop_{basic_loop},
         started_(false),

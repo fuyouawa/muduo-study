@@ -10,6 +10,8 @@ using ThreadInitCallBack = std::function<void(EventLoop*)>;
 class EventLoopThread
 {
 public:
+    MUDUO_STUDY_NONCOPYABLE(EventLoopThread)
+
     EventLoopThread(ThreadInitCallBack&& cb = ThreadInitCallBack()) :
         init_callback_{std::move(cb)},
         loop_{nullptr},
