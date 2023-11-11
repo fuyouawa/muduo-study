@@ -32,7 +32,7 @@ public:
         accept_channel_.Remove();
     }
 
-    bool listening() const noexcept { return listening_; }
+    auto listening() const noexcept { return listening_; }
     void set_new_connection_callback(const NewConnectionCallback& cb) { new_connection_callback_ = cb; }
 
     void Listen() {

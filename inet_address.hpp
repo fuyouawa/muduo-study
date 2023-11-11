@@ -36,8 +36,8 @@ public:
     std::string ip_port() {
         return fmt::format("{}:{}", ip(), ntohs(addr_.sin_port));
     }
-    const sockaddr_in* sockaddr() const noexcept {  return &addr_; }
-    sa_family_t family() const noexcept { return addr_.sin_family; }
+    auto sockaddr() const noexcept {  return &addr_; }
+    auto family() const noexcept { return addr_.sin_family; }
 
     void set_sockaddr(const sockaddr_in& addr) { addr_ = addr; }
 

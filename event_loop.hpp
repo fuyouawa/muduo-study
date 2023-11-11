@@ -51,8 +51,12 @@ public:
         ::close(wakeup_channel_->fd());
     }
 
-    time_point poll_return_time() const noexcept {
+    auto poll_return_time() const noexcept {
         return poll_return_time_;
+    }
+    auto queue_size() const noexcept {
+        std::scoped_lock lock{mutex_};
+        return pending_functors_.size();
     }
 
     void Loop() {
@@ -98,10 +102,6 @@ public:
         if (!IsInLoopThread() || calling_pending_functors_) {
             Wakeup();
         }
-    }
-    size_t queue_size() const noexcept {
-        std::scoped_lock lock{mutex_};
-        return pending_functors_.size();
     }
     void Wakeup() {
         uint64_t one = 1;

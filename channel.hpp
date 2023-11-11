@@ -45,13 +45,14 @@ public:
     void set_close_callback(EventCallback&& cb) noexcept { close_callback_ = std::move(cb); }
     void set_error_callback(EventCallback&& cb) noexcept { error_callback_ = std::move(cb); }
 
-    int fd() const noexcept { return fd_; }
-    int events() const noexcept { return events_; }
-    int revents() const noexcept { return revents_; }
+    auto fd() const noexcept { return fd_; }
+    auto events() const noexcept { return events_; }
+    auto revents() const noexcept { return revents_; }
+    auto owner_loop() const noexcept { return loop_; }
+    auto status() const noexcept { return status_; }
+    
     void set_revents(int revents) noexcept { revents_ = revents; }
-    Status status() const noexcept { return status_; }
     void set_status(Status status) noexcept { status_ = status; }
-    EventLoop* owner_loop() const noexcept { return loop_; }
 
     bool IsNoneEvent() const {return events_ == kNoneEvent; }
     bool IsWriting() const {return events_ & kWriteEvent; }

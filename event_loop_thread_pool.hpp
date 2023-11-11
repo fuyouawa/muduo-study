@@ -18,7 +18,7 @@ public:
     void set_thread_num(size_t num) {
         num_threads_ = num;
     }
-    EventLoop* next_loop() {
+    auto next_loop() {
         basic_loop_->AssertInLoopThread();
         assert(started_);
         EventLoop* loop = basic_loop_;
@@ -31,8 +31,8 @@ public:
         }
         return loop;
     }
-    std::vector<EventLoop*> all_loops() { return loops_; }
-    bool started() { return started_; }
+    auto all_loops() { return loops_; }
+    auto started() { return started_; }
 
     void Start(ThreadInitCallBack&& cb) {
         assert(!started_);
