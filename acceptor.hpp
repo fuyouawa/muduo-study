@@ -11,7 +11,7 @@ class Acceptor
 {
 public:
     MUDUO_STUDY_NONCOPYABLE(Acceptor)
-    using NewConnectionCallback = std::function<void(int sockfd, const InetAddress&)>;
+    using NewConnectionCallback = std::move_only_function<void(int sockfd, const InetAddress&)>;
 
     Acceptor(EventLoop* loop, const InetAddress& listen_addr, bool reuse_port) :
         loop_{loop},
@@ -33,7 +33,7 @@ public:
     }
 
     auto listening() const noexcept { return listening_; }
-    void set_new_connection_callback(const NewConnectionCallback& cb) { new_connection_callback_ = cb; }
+    void set_new_connection_callback(NewConnectionCallback cb) { new_connection_callback_ = std::move(cb); }
 
     void Listen() {
         loop_->AssertInLoopThread();

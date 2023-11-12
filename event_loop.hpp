@@ -20,7 +20,7 @@ class EventLoop
 {
 public:
     MUDUO_STUDY_NONCOPYABLE(EventLoop)
-    using Functor = std::function<void()>;
+    using Functor = std::move_only_function<void()>;
     thread_local static inline EventLoop* Instance = nullptr;
     static constexpr auto kPoolTimeoutMs = 10000ms;
 
@@ -147,7 +147,7 @@ private:
             std::scoped_lock lock{mutex_};
             functors.swap(functors);
         }
-        for (auto functor : functors) {
+        for (decltype(auto) functor : functors) {
             functor();
         }
         calling_pending_functors_ = false;

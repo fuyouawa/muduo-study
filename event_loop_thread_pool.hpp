@@ -36,7 +36,7 @@ public:
     auto all_loops() { return loops_; }
     auto started() { return started_; }
 
-    void Start(ThreadInitCallBack&& cb) {
+    void Start(ThreadInitCallBack cb) {
         assert(!started_);
         basic_loop_->AssertInLoopThread();
         started_ = true;

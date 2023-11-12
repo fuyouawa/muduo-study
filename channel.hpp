@@ -9,8 +9,8 @@ template<typename EventLoop/*=EventLoop*/>
 class ChannelImpl
 {
 public:
-    using EventCallback = std::function<void()>;
-    using ReadEventCallback = std::function<void(std::chrono::system_clock::time_point)>;
+    using EventCallback = std::move_only_function<void()>;
+    using ReadEventCallback = std::move_only_function<void(std::chrono::system_clock::time_point)>;
 
     enum Event {
         kNoneEvent = 0,
@@ -40,10 +40,10 @@ public:
         tie_ = obj;
     }
 
-    void set_read_callback(ReadEventCallback&& cb) noexcept { read_callback_ = std::move(cb); }
-    void set_write_callback(EventCallback&& cb) noexcept { write_callback_ = std::move(cb); }
-    void set_close_callback(EventCallback&& cb) noexcept { close_callback_ = std::move(cb); }
-    void set_error_callback(EventCallback&& cb) noexcept { error_callback_ = std::move(cb); }
+    void set_read_callback(ReadEventCallback cb) noexcept { read_callback_ = std::move(cb); }
+    void set_write_callback(EventCallback cb) noexcept { write_callback_ = std::move(cb); }
+    void set_close_callback(EventCallback cb) noexcept { close_callback_ = std::move(cb); }
+    void set_error_callback(EventCallback cb) noexcept { error_callback_ = std::move(cb); }
 
     auto fd() const noexcept { return fd_; }
     auto events() const noexcept { return events_; }

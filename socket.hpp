@@ -16,13 +16,13 @@ public:
     }
 
     int fd() const { return sockfd_; }
-    std::optional<tcp_info> get_tcp_info() const {
+    auto get_tcp_info() const -> std::expected<tcp_info, int> {
         tcp_info tcpi;
         ZeroMemory(tcpi);
         socklen_t len = sizeof(tcpi);
         auto ret = ::getsockopt(sockfd_, SOL_TCP, TCP_INFO, &tcpi, &len);
         if (ret == 0) return tcpi;
-        return std::nullopt;
+        return std::unexpected(errno);
     }
     void set_tcp_no_delay(bool b) {
         int optval = b ? 1 : 0;

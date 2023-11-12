@@ -1,5 +1,8 @@
 #pragma once
 #include "core.hpp"
+#include <span>
+#include <ranges>
+#include <sys/uio.h>
 
 MUDUO_STUDY_BEGIN_NAMESPACE
 
@@ -19,6 +22,13 @@ public:
     auto writable_bytes() const noexcept { return buffer_.size() - writer_index_; }
     auto prependable_bytes() const noexcept { return reader_index_; }
     auto peek() const noexcept { return &buffer_[reader_index_]; }
+    auto begin_write() noexcept { return &buffer_[writer_index_]; }
+    auto begin_write() const noexcept { return &buffer_[writer_index_]; }
+
+    void HasWriten(size_t len) {
+        assert(len <= writable_bytes());
+        writer_index_ += len;
+    }
 
     void Retrieve(size_t len) {
         assert(len <= readable_bytes());
@@ -49,6 +59,35 @@ public:
         std::string res{peek(), len};
         Retrieve(len);
         return res;
+    }
+
+    void Append(std::span<char> data) {
+        EnsureWritableBytes(data.size());
+        std::ranges::copy(data, begin_write());
+        HasWriten(data.size());
+    }
+
+    auto ReadFd(int fd) -> std::expected<ssize_t, int> {
+        std::array<char, 65536> extrabuf;
+        iovec vec[2];
+        auto writable = writable_bytes();
+        vec[0].iov_base = begin_write();
+        vec[0].iov_len = writable;
+        vec[1].iov_base = extrabuf.data();
+        vec[1].iov_len = extrabuf.size();
+        auto iovcnt = (writable < extrabuf.size()) ? 2 : 1;
+        auto n = readv(fd, vec, iovcnt);
+        if (n == -1) {
+            return std::unexpected(errno);
+        }
+        else if (n <= writable) {
+            writer_index_ += n;
+        }
+        else {
+            writer_index_ = buffer_.size();
+            Append(extrabuf);
+        }
+        return n;
     }
 
 private:

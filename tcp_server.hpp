@@ -26,10 +26,10 @@ public:
     auto thread_pool() { return thread_pool_; }
 
     void set_thread_num(int num);
-    void set_thread_init_callback(ThreadInitCallBack&& cb) { thread_init_callback_ = std::move(cb); }
-    void set_connection_callback(ConnectionCallback&& cb) { connection_callback_ = std::move(cb); }
-    void set_message_callback(MessageCallback&& cb) { message_callback_ = std::move(cb); }
-    void set_write_complete_callback(WriteCompleteCallback&& cb) { write_complete_callback_ = std::move(cb); }
+    void set_thread_init_callback(ThreadInitCallBack cb) { thread_init_callback_ = std::move(cb); }
+    void set_connection_callback(ConnectionCallback cb) { connection_callback_ = std::move(cb); }
+    void set_message_callback(MessageCallback cb) { message_callback_ = std::move(cb); }
+    void set_write_complete_callback(WriteCompleteCallback cb) { write_complete_callback_ = std::move(cb); }
 
     void Start();
 

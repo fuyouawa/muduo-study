@@ -13,6 +13,7 @@
 #include <thread>
 #include <sstream>
 #include <optional>
+#include <expected>
 
 #ifndef MUDUO_STUDY_BEGIN_NAMESPACE
 #define MUDUO_STUDY_BEGIN_NAMESPACE namespace muduo_study {

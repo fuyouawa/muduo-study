@@ -5,14 +5,14 @@
 
 MUDUO_STUDY_BEGIN_NAMESPACE
 
-using ThreadInitCallBack = std::function<void(EventLoop*)>;
+using ThreadInitCallBack = std::move_only_function<void(EventLoop*)>;
 
 class EventLoopThread
 {
 public:
     MUDUO_STUDY_NONCOPYABLE(EventLoopThread)
 
-    explicit EventLoopThread(ThreadInitCallBack&& cb = ThreadInitCallBack()) :
+    explicit EventLoopThread(ThreadInitCallBack cb = ThreadInitCallBack()) :
         init_callback_{std::move(cb)},
         loop_{nullptr},
         thread_{},
@@ -20,6 +20,7 @@ public:
         cv_{},
         exiting_{false}
         {}
+
     ~EventLoopThread() {
         exiting_ = true;
         if (loop_) {
