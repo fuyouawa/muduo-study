@@ -1,6 +1,5 @@
 #pragma once
-#define FMT_HEADER_ONLY 
-#include <fmt/format.h>
+#include <format>
 #include <string.h>
 #include <string_view>
 #include <concepts>
@@ -60,7 +59,7 @@ using time_point = std::chrono::system_clock::time_point;
 MUDUO_STUDY_END_NAMESPACE
 
 template <>
-struct fmt::formatter<std::thread::id> {
+struct std::formatter<std::thread::id> {
     template <typename ParseContext>
     constexpr auto parse(ParseContext& ctx) {
         return ctx.begin();

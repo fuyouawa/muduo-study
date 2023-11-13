@@ -45,15 +45,15 @@ public:
 
     std::string message(std::string_view msg) const {
         if (lv_ == kInfo) {
-            return fmt::format("[{}] {}\n", out_manager_[lv_].first, msg);
+            return std::format("[{}] {}\n", out_manager_[lv_].first, msg);
         }
         if (saved_errno_ != 0) {
-            return fmt::format("[{}] {} strerr:{}-{} '{}() at {}:{}'\n",
+            return std::format("[{}] {} strerr:{}-{} '{}() at {}:{}'\n",
                 out_manager_[lv_].first, msg,
                 strerror(saved_errno_), saved_errno_,
                 func_name_, filename_, line_);
         }
-        return fmt::format("[{}] {} '{}() at {}:{}'\n", out_manager_[lv_].first, msg, func_name_, filename_, line_);
+        return std::format("[{}] {} '{}() at {}:{}'\n", out_manager_[lv_].first, msg, func_name_, filename_, line_);
     }
 
 private:
