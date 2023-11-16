@@ -34,7 +34,7 @@ public:
         return inet_ntop(AF_INET, &addr_.sin_addr, tmp, sizeof(tmp));
     }
     std::string ip_port() {
-        return fmt::format("{}:{}", ip(), ntohs(addr_.sin_port));
+        return std::format("{}:{}", ip(), ntohs(addr_.sin_port));
     }
     auto sockaddr() const noexcept {  return &addr_; }
     auto family() const noexcept { return addr_.sin_family; }

@@ -20,8 +20,8 @@ public:
     TcpServer(EventLoop* loop, const InetAddress& listen_addr, std::string_view name, Option opt = kNoReusePort);
     ~TcpServer();
 
-    std::string_view ip_port()  { return ip_port_; }
-    std::string_view name() { return name_; }
+    auto ip_port() const { return ip_port_; }
+    auto name() const { return name_; }
     auto loop() { return loop_; }
     auto thread_pool() { return thread_pool_; }
 

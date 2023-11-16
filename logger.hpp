@@ -27,11 +27,11 @@ public:
         saved_errno_{saved_errno} {}
 
     template<typename... Args>
-    void Output(std::string_view fmt, Args&&... args) {
+    void Output(std::string_view fmt, Args&&... args) const {
 #ifdef NDEBUG
         if (lv_ == kDebug) return;
 #endif
-        out_manager_[lv_].second.get() << message(fmt::vformat(fmt, fmt::make_format_args(args...)));
+        out_manager_[lv_].second.get() << message(std::vformat(fmt, std::make_format_args(args...)));
         switch (lv_)
         {
         case kError:
@@ -75,10 +75,7 @@ private:
 MUDUO_STUDY_END_NAMESPACE
 
 #ifndef _MUDUO_STUDY_LOG
-#define _MUDUO_STUDY_LOG(lv, saved_errno, ...) \
-do { \
-    muduo_study::Logger{__FILE__, __func__, __LINE__, lv, saved_errno}.Output(__VA_ARGS__); \
-} while(0)
+#define _MUDUO_STUDY_LOG(lv, saved_errno, ...) muduo_study::Logger{__FILE__, __func__, __LINE__, lv, saved_errno}.Output(__VA_ARGS__)
 #define MUDUO_STUDY_LOG_INFO(...) _MUDUO_STUDY_LOG(muduo_study::Logger::kInfo, 0, __VA_ARGS__)
 #define MUDUO_STUDY_LOG_DEBUG(...) _MUDUO_STUDY_LOG(muduo_study::Logger::kDebug, 0, __VA_ARGS__)
 #define MUDUO_STUDY_LOG_WARNING(...) _MUDUO_STUDY_LOG(muduo_study::Logger::kWarning, 0, __VA_ARGS__)

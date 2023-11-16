@@ -59,14 +59,14 @@ using time_point = std::chrono::system_clock::time_point;
 MUDUO_STUDY_END_NAMESPACE
 
 template <>
-struct std::formatter<std::thread::id> {
+struct std::formatter<std::jthread::id> {
     template <typename ParseContext>
-    constexpr auto parse(ParseContext& ctx) {
+    constexpr auto parse(ParseContext& ctx) const {
         return ctx.begin();
     }
 
     template <typename FormatContext>
-    auto format(const std::thread::id& tid, FormatContext& ctx) {
+    auto format(const std::jthread::id& tid, FormatContext& ctx) const {
         std::stringstream ss;
         ss << tid;
         return format_to(ctx.out(), "{}", ss.str());

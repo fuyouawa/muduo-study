@@ -18,15 +18,15 @@ public:
         accept_socket_{::socket(listen_addr.family(), SOCK_STREAM | SOCK_NONBLOCK | SOCK_CLOEXEC, IPPROTO_TCP)},
         accept_channel_{loop, accept_socket_.fd()},
         listening_{false}
-        {
-            if (accept_socket_.fd() == -1) {
-                MUDUO_STUDY_LOG_SYSFATAL("socket() failed!");
-            }
-            accept_socket_.set_reuse_addr(true);
-            accept_socket_.set_reuse_port(reuse_port);
-            accept_socket_.BindAddress(listen_addr);
-            accept_channel_.set_read_callback([this](auto){ this->HandleRead(); });
+    {
+        if (accept_socket_.fd() == -1) {
+            MUDUO_STUDY_LOG_SYSFATAL("socket() failed!");
         }
+        accept_socket_.set_reuse_addr(true);
+        accept_socket_.set_reuse_port(reuse_port);
+        accept_socket_.BindAddress(listen_addr);
+        accept_channel_.set_read_callback([this](auto){ this->HandleRead(); });
+    }
     ~Acceptor() {
         accept_channel_.DisableAll();
         accept_channel_.Remove();
