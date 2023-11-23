@@ -86,15 +86,15 @@ public:
             Wakeup();
         }
     }
-    void RunInLoop(Functor& cb) {
+    void RunInLoop(Functor cb) {
         if (IsInLoopThread()) {
             cb();
         }
         else {
-            QueueInLoop(cb);
+            QueueInLoop(std::move(cb));
         }
     }
-    void QueueInLoop(Functor& cb) {
+    void QueueInLoop(Functor cb) {
         {
             std::scoped_lock lock{mutex_};
             pending_functors_.push_back(std::move(cb));

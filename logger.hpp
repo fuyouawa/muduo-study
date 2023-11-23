@@ -34,8 +34,8 @@ public:
         out_manager_[lv_].second.get() << message(std::vformat(fmt, std::make_format_args(args...)));
         switch (lv_)
         {
-        case kError:
-            throw std::runtime_error("Error occur!");
+        // case kError:
+        //     throw std::runtime_error("Error occur!");
         case kFatal:
             abort();
         default:
@@ -80,6 +80,7 @@ MUDUO_STUDY_END_NAMESPACE
 #define MUDUO_STUDY_LOG_DEBUG(...) _MUDUO_STUDY_LOG(muduo_study::Logger::kDebug, 0, __VA_ARGS__)
 #define MUDUO_STUDY_LOG_WARNING(...) _MUDUO_STUDY_LOG(muduo_study::Logger::kWarning, 0, __VA_ARGS__)
 #define MUDUO_STUDY_LOG_ERROR(...) _MUDUO_STUDY_LOG(muduo_study::Logger::kError, 0, __VA_ARGS__)
+#define MUDUO_STUDY_LOG_ERROR2(saved_errno, ...) _MUDUO_STUDY_LOG(muduo_study::Logger::kError, saved_errno, __VA_ARGS__)
 #define MUDUO_STUDY_LOG_FATAL(...) _MUDUO_STUDY_LOG(muduo_study::Logger::kFatal, 0, __VA_ARGS__)
 #define MUDUO_STUDY_LOG_SYSERR(...) _MUDUO_STUDY_LOG(muduo_study::Logger::kError, errno, __VA_ARGS__)
 #define MUDUO_STUDY_LOG_SYSFATAL(...) _MUDUO_STUDY_LOG(muduo_study::Logger::kFatal, errno, __VA_ARGS__)

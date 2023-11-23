@@ -90,6 +90,10 @@ public:
         return n;
     }
 
+    auto WriteFd(int fd) {
+        return ::write(fd, peek(), readable_bytes());
+    }
+
 private:
     void MakeSpace(size_t len) {
         if (writable_bytes() + prependable_bytes() < len + kCheapPrepend) {

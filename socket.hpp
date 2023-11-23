@@ -16,13 +16,23 @@ public:
     }
 
     int fd() const { return sockfd_; }
-    auto get_tcp_info() const -> std::expected<tcp_info, int> {
-        tcp_info tcpi;
+    auto tcp_info() const -> std::expected<::tcp_info, int> {
+        ::tcp_info tcpi;
         ZeroMemory(tcpi);
         socklen_t len = sizeof(tcpi);
         auto ret = ::getsockopt(sockfd_, SOL_TCP, TCP_INFO, &tcpi, &len);
         if (ret == 0) return tcpi;
         return std::unexpected(errno);
+    }
+    int socket_error() {
+        int optval;
+        socklen_t optlen = sizeof(optval);
+        if (::getsockopt(sockfd_, SOL_SOCKET, SO_ERROR, &optval, &optlen) == 0) {
+            return optval;
+        }
+        else {
+            return errno;
+        }
     }
     void set_tcp_no_delay(bool b) {
         int optval = b ? 1 : 0;
