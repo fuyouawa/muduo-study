@@ -79,6 +79,7 @@ public:
             DoPendingFunctors();
         }
         MUDUO_STUDY_LOG_DEBUG("EventLoop({:016x}) Stop!", (intptr_t)this);
+        looping_ = false;
     }
     void Quit() {
         quit_ = true;

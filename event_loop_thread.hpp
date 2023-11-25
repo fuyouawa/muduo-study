@@ -5,7 +5,7 @@
 
 MUDUO_STUDY_BEGIN_NAMESPACE
 
-using ThreadInitCallBack = std::move_only_function<void(EventLoop*)>;
+using ThreadInitCallBack = std::function<void(EventLoop*)>;
 
 class EventLoopThread
 {
@@ -13,12 +13,12 @@ public:
     MUDUO_STUDY_NONCOPYABLE(EventLoopThread)
 
     explicit EventLoopThread(ThreadInitCallBack cb = ThreadInitCallBack()) :
-        init_callback_{std::move(cb)},
         loop_{nullptr},
+        exiting_{false},
         thread_{},
         mutex_{},
         cv_{},
-        exiting_{false}
+        init_callback_{std::move(cb)}
         {}
 
     ~EventLoopThread() {
@@ -45,12 +45,12 @@ private:
         EventLoop loop;
         if (init_callback_) init_callback_(&loop);
         {
-            std::scoped_lock(mutex_);
+            std::scoped_lock sl{mutex_};
             loop_ = &loop;
         }
         cv_.notify_one();
         loop.Loop();
-        std::scoped_lock(mutex_);
+        std::scoped_lock sl{mutex_};
         loop_ = nullptr;
     }
 

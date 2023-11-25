@@ -12,7 +12,12 @@ public:
     EPollPoller(EventLoop* loop) :
         Poller{loop},
         epollfd_{epoll_create1(EPOLL_CLOEXEC)},
-        events_{kInitEventListSize} {}
+        events_{kInitEventListSize}
+    {
+        if (epollfd_ < 0) {
+            MUDUO_STUDY_LOG_FATAL("epoll_create1 failed!");
+        }
+    }
 
     ~EPollPoller() override {
         ::close(epollfd_);
@@ -120,12 +125,13 @@ private:
         event.events = channel->events();
         event.data.ptr = channel;
         auto fd = channel->fd();
-        if (epoll_ctl(epollfd_, op, fd, &event) == -1) {
+        MUDUO_STUDY_LOG_DEBUG("epoll_ctl({}, {}, {}, {})", epollfd_, OpToStr(op), fd, channel->events_str());
+        if (::epoll_ctl(epollfd_, op, fd, &event) == -1) {
             if (op == EPOLL_CTL_DEL) {
                 MUDUO_STUDY_LOG_SYSERR("epoll_ctl failed! op is {}", OpToStr(op));
             }
             else {
-                MUDUO_STUDY_LOG_SYSERR("epoll_ctl failed! op is {}", OpToStr(op));
+                MUDUO_STUDY_LOG_SYSFATAL("epoll_ctl failed! op is {}", OpToStr(op));
             }
         }
         

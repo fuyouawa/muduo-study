@@ -61,7 +61,7 @@ public:
         return res;
     }
 
-    void Append(std::span<char> data) {
+    void Append(std::span<const char> data) {
         EnsureWritableBytes(data.size());
         std::ranges::copy(data, begin_write());
         HasWriten(data.size());
@@ -80,7 +80,7 @@ public:
         if (n == -1) {
             return std::unexpected(errno);
         }
-        else if (n <= writable) {
+        else if ((size_t)n <= writable) {
             writer_index_ += n;
         }
         else {

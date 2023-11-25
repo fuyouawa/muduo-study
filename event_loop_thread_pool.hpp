@@ -9,11 +9,12 @@ class EventLoopThreadPool
 public:
     MUDUO_STUDY_NONCOPYABLE(EventLoopThreadPool)
 
-    explicit EventLoopThreadPool(EventLoop* basic_loop) :
+    explicit EventLoopThreadPool(EventLoop* basic_loop, const std::string_view name) :
         basic_loop_{basic_loop},
         started_(false),
         num_threads_{0},
-        next_{0}
+        next_{0},
+        name_{name}
         {}
     ~EventLoopThreadPool() = default;
 
@@ -50,11 +51,12 @@ public:
 
 private:
     EventLoop* basic_loop_;
+    bool started_;
     size_t num_threads_;
     size_t next_;
+    std::string name_;
     std::vector<std::unique_ptr<EventLoopThread>> threads_;
     std::vector<EventLoop*> loops_;
-    bool started_;
 };
 
 

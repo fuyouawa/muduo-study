@@ -50,6 +50,24 @@ public:
     auto revents() const noexcept { return revents_; }
     auto owner_loop() const noexcept { return loop_; }
     auto status() const noexcept { return status_; }
+    std::string events_str() const noexcept {
+        std::ostringstream oss;
+        if (events_ & EPOLLIN)
+            oss << "EPOLLIN | ";
+        if (events_ & EPOLLPRI)
+            oss << "EPOLLPRI | ";
+        if (events_ & EPOLLOUT)
+            oss << "EPOLLOUT | ";
+        if (events_ & EPOLLHUP)
+            oss << "EPOLLHUP | ";
+        if (events_ & EPOLLRDHUP)
+            oss << "EPOLLRDHUP | ";
+        if (events_ & EPOLLERR)
+            oss << "EPOLLERR | ";
+        auto tmp = oss.str();
+        assert(!tmp.empty());
+        return tmp.substr(0, tmp.size() - 3);
+    }
     
     void set_revents(int revents) noexcept { revents_ = revents; }
     void set_status(Status status) noexcept { status_ = status; }
@@ -70,15 +88,14 @@ public:
     }
 
     void HandleEvent(time_point receive_time) {
-        if (tie_.expired()) {
-            if (tie_.lock()) {
+        if (!tie_.expired()) {
+            if (auto guard = tie_.lock()) {
                 HandleEventWithGuard(receive_time);
             }
         }
         else {
             HandleEventWithGuard(receive_time);
         }
-        
     }
 
 private:
@@ -93,7 +110,7 @@ private:
             if (close_callback_) close_callback_();
         }
         if (revents_ & EPOLLERR) {
-            if (error_callback_) close_callback_();
+            if (error_callback_) error_callback_();
         }
         if (revents_ & (EPOLLIN | EPOLLPRI | EPOLLRDHUP)) {
             if (read_callback_) read_callback_(receive_time);

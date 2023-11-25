@@ -28,12 +28,13 @@ public:
             MUDUO_STUDY_LOG_SYSERR("inet_pton(...) failed!");
         }
     }
+    InetAddress(const sockaddr_in& addr) : addr_{addr} {}
 
-    std::string ip() {
+    std::string ip() const {
         char tmp[INET_ADDRSTRLEN];
         return inet_ntop(AF_INET, &addr_.sin_addr, tmp, sizeof(tmp));
     }
-    std::string ip_port() {
+    std::string ip_port() const {
         return std::format("{}:{}", ip(), ntohs(addr_.sin_port));
     }
     auto sockaddr() const noexcept {  return &addr_; }

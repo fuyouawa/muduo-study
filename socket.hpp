@@ -34,6 +34,17 @@ public:
             return errno;
         }
     }
+    auto local_addr() -> std::optional<sockaddr_in> {
+        sockaddr_in addr;
+        ZeroMemory(addr);
+        socklen_t addrlen = sizeof(addr);
+        if (::getsockname(sockfd_, (sockaddr*)&addr, &addrlen) == -1) {
+            MUDUO_STUDY_LOG_SYSERR("::getsockname failed!");
+            return std::nullopt;
+        }
+        return addr;
+    }
+
     void set_tcp_no_delay(bool b) {
         int optval = b ? 1 : 0;
         ::setsockopt(sockfd_, IPPROTO_TCP, TCP_NODELAY, &optval, sizeof(optval));

@@ -4,6 +4,7 @@
 #include "buffer.hpp"
 #include "inet_address.hpp"
 #include "socket.hpp"
+#include "event_loop.hpp"
 
 MUDUO_STUDY_BEGIN_NAMESPACE
 
@@ -15,7 +16,16 @@ public:
         std::string_view name,
         int sockfd,
         const InetAddress& local_addr,
-        const InetAddress& peer_addr)
+        const InetAddress& peer_addr) :
+        loop_{loop},
+        name_{name},
+        state_{kConnecting},
+        reading_{true},
+        socket_{new Socket(sockfd)},
+        channel_{new Channel(loop, sockfd)},
+        local_addr_{local_addr},
+        peer_addr_{peer_addr},
+        high_water_mark_{64*1024*1024}
     {
         channel_->set_read_callback([this](auto rt){ HandleRead(rt); });
         channel_->set_write_callback([this](){ HandleWrite(); });
@@ -47,12 +57,42 @@ public:
     void set_close_callback(CloseCallback cb) { close_callback_ = std::move(cb); }
     void set_tcp_no_dealy(bool b) { socket_->set_tcp_no_delay(b); }
 
-    void Send(const std::span<char> msg);
-    void Send(Buffer* msg);
-    void Shutdown();
-    void ForceClose();
-    void StartRead();
-    void StopRead();
+    void Send(const std::span<const char> data) {
+        if (state_ == kConnected) {
+            if (loop_->IsInLoopThread()) {
+                SendInLoop(data);
+            }
+            else {
+                loop_->QueueInLoop([this, copy_data=std::vector<char>(data.begin(), data.end())]() { 
+                    SendInLoop(std::span(copy_data));
+                });
+            }
+        }
+    }
+    void Shutdown() {
+        if (state_ == kConnected) {
+            set_state(kDisconnecting);
+            loop_->RunInLoop([this](){ ShutdownInLoop(); });
+        }
+    }
+    void ConnectEstablished() {
+        loop_->AssertInLoopThread();
+        assert(state_ == kConnecting);
+        set_state(kConnected);
+        channel_->Tie(shared_from_this());
+        channel_->EnableReading();
+        connection_callback_(shared_from_this());
+    }
+    void ConnectDestroyed() {
+        loop_->AssertInLoopThread();
+        if (state_ == kConnected) {
+            set_state(kDisconnected);
+            channel_->DisableAll();
+
+            connection_callback_(shared_from_this());
+        }
+        channel_->Remove();
+    }
 
 private:
     enum StateE { kDisconnected, kConnecting, kConnected, kDisconnecting };
@@ -85,7 +125,7 @@ private:
                 if (output_buffer_.readable_bytes() == 0) {
                     channel_->DisableWriting();
                     if (write_complete_callback_) {
-                        loop_->QueueInLoop([this](){ write_complete_callback_(shared_from_this()); });
+                        loop_->QueueInLoop([self=shared_from_this()](){ self->write_complete_callback_(self); });
                     }
                     if (state_ == kDisconnecting) {
                         ShutdownInLoop();
@@ -111,11 +151,55 @@ private:
     void HandleError() {
         MUDUO_STUDY_LOG_ERROR2(socket_->socket_error(), "SO_ERROR");
     }
-    void SendInLoop(std::span<char> msg);
-    void ShutdownInLoop();
-    void ForceCloseInLoop();
-    void StartReadInLoop();
-    void StopReadInLoop();
+    void SendInLoop(const std::span<const char> data) {
+        loop_->AssertInLoopThread();
+        ssize_t nwrote = 0;
+        auto remaining = data.size();
+        bool fault_error = false;
+        if (state_ == kDisconnected) {
+            MUDUO_STUDY_LOG_WARNING("disconnected, give up writing!");
+            return;
+        }
+        if (!channel_->IsWriting() && output_buffer_.readable_bytes() == 0) {
+            nwrote = ::write(channel_->fd(), data.data(), data.size());
+            if (nwrote >= 0) {
+                remaining = data.size() - nwrote;
+                if (remaining == 0 && write_complete_callback_) {
+                    loop_->QueueInLoop([self=shared_from_this()](){ self->write_complete_callback_(self); });
+                }
+            }
+            else {
+                nwrote = 0;
+                if (errno != EWOULDBLOCK) {
+                    MUDUO_STUDY_LOG_SYSERR("::write failed!");
+                    if (errno == EPIPE || errno == ECONNRESET) {
+                        fault_error = true;
+                    }
+                }
+            }
+        }
+
+        assert(remaining <= data.size());
+        if (!fault_error && remaining > 0) {
+            auto old_len = output_buffer_.readable_bytes();
+            if (old_len + remaining >= high_water_mark_ &&
+                old_len < high_water_mark_ &&
+                high_water_mark_callback_)
+            {
+                loop_->QueueInLoop([=, self=shared_from_this()](){ self->high_water_mark_callback_(self, old_len + remaining); });
+            }
+            output_buffer_.Append(data.subspan(nwrote, remaining));
+            if (!channel_->IsWriting()) {
+                channel_->EnableWriting();
+            }
+        }
+    }
+    void ShutdownInLoop() {
+        loop_->AssertInLoopThread();
+        if (!channel_->IsWriting()) {
+            socket_->ShutDownWrite();
+        }
+    }
 
     EventLoop* loop_;
     const std::string name_;
