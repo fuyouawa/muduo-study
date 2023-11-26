@@ -8,6 +8,17 @@ MUDUO_STUDY_BEGIN_NAMESPACE
 class Socket
 {
 public:
+    static auto GetLocalAddr(int sockfd) -> std::optional<sockaddr_in> {
+        sockaddr_in addr;
+        ZeroMemory(addr);
+        socklen_t addrlen = sizeof(addr);
+        if (::getsockname(sockfd, (sockaddr*)&addr, &addrlen) == -1) {
+            MUDUO_STUDY_LOG_SYSERR("::getsockname failed!");
+            return std::nullopt;
+        }
+        return addr;
+    }
+
     explicit Socket(int sockfd) :
         sockfd_{sockfd}
     {}
@@ -33,16 +44,6 @@ public:
         else {
             return errno;
         }
-    }
-    auto local_addr() -> std::optional<sockaddr_in> {
-        sockaddr_in addr;
-        ZeroMemory(addr);
-        socklen_t addrlen = sizeof(addr);
-        if (::getsockname(sockfd_, (sockaddr*)&addr, &addrlen) == -1) {
-            MUDUO_STUDY_LOG_SYSERR("::getsockname failed!");
-            return std::nullopt;
-        }
-        return addr;
     }
 
     void set_tcp_no_delay(bool b) {

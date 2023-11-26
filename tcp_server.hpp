@@ -84,7 +84,7 @@ private:
         auto conn_name = std::format("{}-{}#{}", name_, ip_port_, next_connid_);
         ++next_connid_;
         MUDUO_STUDY_LOG_INFO("new connection [{}] from {}", conn_name, peer_addr.ip_port());
-        if (auto opt = Socket(sockfd).local_addr(); opt.has_value()) {
+        if (auto opt = Socket::GetLocalAddr(sockfd); opt.has_value()) {
             InetAddress local_addr{ opt.value() };
             auto conn = std::make_shared<TcpConnection>(loop_, conn_name, sockfd, local_addr, peer_addr);
             connections_[conn_name] = conn;

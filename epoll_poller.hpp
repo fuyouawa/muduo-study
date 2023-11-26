@@ -110,7 +110,6 @@ private:
     void FillActiveChannels(size_t num_events, ChannelList* active_channels) const {
         assert(num_events < events_.size());
         for (size_t i = 0; i < num_events; i++){
-            auto b = events_[i];
             auto channel = static_cast<Channel*>(events_[i].data.ptr);
 #ifndef NDEBUG
             auto it = channels_.find(channel->fd());
